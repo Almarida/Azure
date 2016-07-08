@@ -1,0 +1,23 @@
+$appsToRemove = @("*3dbuilder*", "*Appconnector*", "*windowscommunicationsapps*", "*CandyCrushSaga*", "*officehub*", "*skypeapp*", "*getstarted*", "*zunemusic*", `
+                    "*windowsmaps*", "*Messaging*", "*solitairecollection*", "*ConnectivityStore*", "*bingfinance*", "*zunevideo*", "*bingnews*", "*onenote*", `
+                    "*people*", "*CommsPhone*", "*windowsphone*", "*WindowsScan*", "*bingsports*", "*Office.Sway*", "*Twitter*", "*soundrecorder*", "*xboxapp*", "*XboxOneSmartGlass*")
+
+Get-AppxPackage -AllUsers | % {
+    $app = $_
+    $appsToRemove | % {
+        if ($app.PackageFullName -like $_) {
+            "- $($app.PackageFullName)"
+            Remove-AppxPackage $app
+        }
+    }
+}
+
+Get-AppxProvisionedPackage –Online | % {
+    $app = $_
+    $appsToRemove | % {
+        if ($app.PackageName -like $_) {
+            "- $($app.PackageName)"
+            $app | Remove-AppxProvisionedPackage –Online
+        }
+    }
+}

@@ -1,0 +1,2 @@
+#Allows you to repair trust relationship between computer and domain, no reboot required, no unjoining and rejoining to domain
+Test-ComputerSecureChannel -Credential fmtsd.com\chaggarty -Repair

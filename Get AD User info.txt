@@ -1,0 +1,6 @@
+#Simple way to pull AD info from powershell
+get-aduser -filter 'Name -like "*corey*"'
+
+#Pull all members of an OU
+get-aduser -filter * -searchbase "OU=IT,OU=FMT Employees,OU=People,OU=Production,DC=FMTSD,DC=com"
+ | out-gridview

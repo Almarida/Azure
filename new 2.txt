@@ -1,0 +1,64 @@
+#Version 3
+$locName = "West US"
+#Resource Group to Deploy VM	
+$rgName = "DEV"
+#Storage Account to Deploy HDD
+$stName = "acwdevstorg01"
+$storageAcc = Get-AzureRmStorageAccount -Name acwdevstorg01 -ResourceGroupName dev
+#VNET for VM
+$vnet = Get-AzureRmVirtualNetwork -Name acwinfravnet01 -ResourceGroupName infrastructure
+#NIC Info, need to run command "Get-AzureRmVirtualNetwork -Name acwinfravnet01 -ResourceGroupName infrastructure" to get VNET information to determine subnet ID
+$nicName = "acwtest2nic"
+$subnetID = "/subscriptions/da044e5b-71dc-4ef1-8c39-f62ee4364158/resourceGroups/Infrastructure/providers/Microsoft.Network/virtualNetworks/acwinfravnet01/subnets/Dev"
+$nic = New-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $rgName -Location $locName -SubnetId $subnetID -PublicIpAddressId $pip.Id
+#Credentials information, pw must meet complexity requirements aka 8+ char + special
+$cred = Get-Credential -Message "Type the name and password of the local administrator account."
+#VM Machine name, no spaces
+$vmName = "acwtest02"
+#Check vmsize name listing
+$vm = New-AzureRmVMConfig -VMName $vmName -VMSize "Standard_A2"
+$vm = Set-AzureRmVMOperatingSystem -VM $vm -Windows -ComputerName $compName -Credential $cred -ProvisionVMAgent -EnableAutoUpdate
+$compName = "acwtest02"
+$vm = Add-AzureRmVMNetworkInterface -VM $vm -Id $nic.Id
+$blobPath = "vhds/FMTImage-osDisk.vhd"
+$osDiskUri = $storageAcc.PrimaryEndpoints.Blob.ToString() + $blobPath
+#Need to change this?
+$diskName = "test2"
+$vm = Set-AzureRmVMOSDisk -VM $vm -Name $diskName -VhdUri $osDiskUri -CreateOption fromImage -sourceimageuri https://acwdevstorg01.blob.core.windows.net/vhds/FMTImage-osDisk.vhd -windows
+New-AzureRmVM -ResourceGroupName $rgName -Location $locName -VM $vm -licenseType Windows_Server
+#Build VM with custom license
+
+
+#https://acwdevstorg01.blob.core.windows.net/system/Microsoft.Compute/Images/vhds/FMTImage-osDisk.c3ed3a2a-438a-4408-be1c-d569e60b4263.vhd
+
+$pip = New-AzureRmPublicIpAddress -Name $pipName -ResourceGroupName $rgName -Location $location -AllocationMethod Dynamic
+
+$subnetconfig = New-AzureRmVirtualNetworkSubnetConfig -Name $subnet1Name -AddressPrefix $vnetSubnetAddressPrefix
+
+$vnet = New-AzureRmVirtualNetwork -Name $vnetName -ResourceGroupName $rgName -Location $location -AddressPrefix $vnetAddressPrefix -Subnet $subnetconfig
+
+$nic = New-AzureRmNetworkInterface -Name $nicname -ResourceGroupName $rgName -Location $location -SubnetId $vnet.Subnets[0].Id -PublicIpAddressId $pip.Id
+
+#Enter a new user name and password in the pop-up for the following
+$cred = Get-Credential
+
+#Get the storage account where the captured image is stored
+$storageAcc = Get-AzureRmStorageAccount -ResourceGroupName $rgName -AccountName $storageAccName
+
+#Set the VM name and size
+$vmConfig = New-AzureRmVMConfig -VMName $vmName -VMSize "Standard_A2"
+
+#Set the Windows operating system configuration and add the NIC
+$vm = Set-AzureRmVMOperatingSystem -VM $vmConfig -Windows -ComputerName $computerName -Credential $cred -ProvisionVMAgent -EnableAutoUpdate
+
+$vm = Add-AzureRmVMNetworkInterface -VM $vm -Id $nic.Id
+
+#Create the OS disk URI
+$osDiskUri = '{0}vhds/{1}{2}.vhd' -f $storageAcc.PrimaryEndpoints.Blob.ToString(), $vmName.ToLower(), $osDiskName
+
+#Configure the OS disk to be created from image (-CreateOption fromImage) and give the URL of the captured image VHD for the -SourceImageUri parameter.
+#We found this URL in the local JSON template in the previous sections.
+$vm = Set-AzureRmVMOSDisk -VM $vm -Name $osDiskName -VhdUri $osDiskUri -CreateOption fromImage -SourceImageUri $urlOfCapturedImageVhd -Windows
+
+#Create the new VM
+New-AzureRmVM -ResourceGroupName $rgName -Location $location -VM $vm

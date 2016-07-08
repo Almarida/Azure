@@ -1,0 +1,15 @@
+#Job Script to backup daily
+DECLARE @SQLStatement VARCHAR(2000) 
+SET @SQLStatement = 'C:\temp\AdventureWorks_' + CONVERT(nvarchar(30), datename(dw,getdate()), 110) +'.bak' 
+BACKUP DATABASE [TWO] TO  DISK = @SQLStatement
+
+#Update Job to report to event log on failure or success
+UPDATE msdb..sysjobs
+ SET [notify_level_eventlog] = 3
+ WHERE [name] like 'DailyBackup' 
+
+#Backup Log with hourly overwrite, use datepart to extract hour then convert int value to nvarchar so it can be a filename
+DECLARE @SQLStatement VARCHAR(2000) 
+SET @SQLStatement = 'C:\temp\TWO_' + convert(nvarchar(30), DATEPART(hour,getdate())) +'.trn' 
+BACKUP log [TWO] TO  DISK = @SQLStatement
+

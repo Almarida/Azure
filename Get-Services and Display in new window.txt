@@ -1,0 +1,2 @@
+#Simple script to display services in new window, but useful for viewing data in other scripts to use out-gridview
+get-service | out-gridview -passthru

@@ -1,0 +1,1 @@
+netstat -an 2 | find /i "SYN_SENT"

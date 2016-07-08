@@ -1,0 +1,24 @@
+#Powershell script, doesn't seem to always work but does work on my OS
+$destination = Read-Host "Specify destination host name or IP address "
+$logonly="Y"
+$filelocation="C:\temp\"+$destination+"_ping_results.txt"
+
+Do{
+    If($logonly -notmatch '^[yn]$' ) { Write-Warning "Invalid Entry" }
+    $logonly = Read-Host "Log to a file and Output to console? (Y/N) "
+} While($logonly -notmatch '^[yn]$')
+
+Write-Host "Default ping vaules: -count 999999 -delay 2"
+
+if ($logonly -eq "y") { 
+    write-host "Pinging host:"$destination". Log file location: "$filelocation -BackgroundColor Yellow -ForegroundColor Red
+    test-connection $destination -count 999999 -delay 2 -Verbose | format-table @{n='TimeStamp';e={Get-Date}},@{Expression={$_.Address};Label='Destination'},IPV4aDDRESS,ResponseTime | tee-object -filepath $filelocation -Append 
+}
+
+else { 
+    test-connection $destination -count 999999 -delay 2 -Verbose | format-table @{n='TimeStamp';e={Get-Date}},@{Expression={$_.Address};Label="Destination"},IPV4aDDRESS,ResponseTime 
+}
+
+!CMD Script, seems to work otherwise
+
+ping -t 10.1.7.87|cmd /q /v /c "(pause&pause)>nul & for /l %a in () do (set /p "data=" && echo(!date! !time! !data!)&ping -n 2 10.1.7.87>nul" >C:\temp\pingtest.txt

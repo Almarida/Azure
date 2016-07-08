@@ -1,0 +1,4 @@
+#use test-netconnection to test if a port is open and responding or traceroute or whatever
+test-netconnection espn.com -port 80
+test-netconnection espn.com -traceroute
+get-netipconfiguration

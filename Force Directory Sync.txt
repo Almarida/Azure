@@ -1,0 +1,9 @@
+--This script is used to force AD to sync with O365
+--Run this on FMTvIT02, has the Dirsync installed and configured. By default it will run every 3 hours.
+--Use Synchronization Service Manager to view results
+
+write-host "Starting DirSync"
+import-module dirsync
+Start-OnlineCoexistenceSync
+write-host Complete
+.

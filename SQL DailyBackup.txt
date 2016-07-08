@@ -1,0 +1,90 @@
+#Job Script to backup daily
+DECLARE @SQLStatement VARCHAR(2000) 
+SET @SQLStatement = 'C:\temp\AdventureWorks_' + CONVERT(nvarchar(30), datename(dw,getdate()), 110) +'.bak' 
+BACKUP DATABASE [TWO] TO  DISK = @SQLStatement
+
+#Update Job to report to event log on failure or success
+UPDATE msdb..sysjobs
+ SET [notify_level_eventlog] = 3
+ WHERE [name] like 'DailyBackup' 
+
+
+#Create GPDB table in master with nvarchar datatype and column name = name
+#This cursor will then iterate through this table of database names to backup
+#Create individual folders for each db
+
+DECLARE @name VARCHAR(50) -- database name  
+DECLARE @path VARCHAR(256) -- path for backup files  
+DECLARE @fileName VARCHAR(256) -- filename for backup  
+DECLARE @fileDate VARCHAR(20) -- used for file name
+
+ 
+-- specify database backup directory
+SET @path = 'C:\temp\'  
+
+ 
+-- specify filename format
+SELECT @fileDate = CONVERT(nvarchar(30), datename(dw,getdate()), 110)
+
+ 
+DECLARE db_cursor CURSOR FOR  
+SELECT name 
+FROM master.dbo.gpdb
+WHERE name NOT IN ('master','model','msdb','tempdb')  -- exclude these databases
+
+ 
+OPEN db_cursor   
+FETCH NEXT FROM db_cursor INTO @name   
+
+ 
+WHILE @@FETCH_STATUS = 0   
+BEGIN   
+       SET @fileName = @path + @name + '/' + @name + '_' + @fileDate + '.BAK'  
+       BACKUP DATABASE @name TO DISK = @fileName  with init
+
+ 
+       FETCH NEXT FROM db_cursor INTO @name   
+END   
+
+ 
+CLOSE db_cursor   
+DEALLOCATE db_cursor
+
+#Same Cursor but for logs on the hour
+
+DECLARE @name VARCHAR(50) -- database name  
+DECLARE @path VARCHAR(256) -- path for backup files  
+DECLARE @fileName VARCHAR(256) -- filename for backup  
+DECLARE @fileDate VARCHAR(20) -- used for file name
+
+ 
+-- specify database backup directory
+SET @path = 'C:\temp\'  
+
+ 
+-- specify filename format
+SELECT @fileDate = CONVERT(nvarchar(30), DATEPART(hour,getdate()), 110)
+
+ 
+DECLARE db_cursor CURSOR FOR  
+SELECT name 
+FROM master.dbo.gpdb
+WHERE name NOT IN ('master','model','msdb','tempdb')  -- exclude these databases
+
+ 
+OPEN db_cursor   
+FETCH NEXT FROM db_cursor INTO @name   
+
+ 
+WHILE @@FETCH_STATUS = 0   
+BEGIN   
+       SET @fileName = @path + @name +  '/' + @name + '_' + @fileDate + '.TRN'  
+       BACKUP LOG @name TO DISK = @fileName  with init
+
+ 
+       FETCH NEXT FROM db_cursor INTO @name   
+END   
+
+ 
+CLOSE db_cursor   
+DEALLOCATE db_cursor

@@ -1,0 +1,4 @@
+#install iis prereqs for gpweb client
+Install-WindowsFeature -name web-server, web-static-content, web-default-doc, web-windows-auth,
+web-asp-net45
+
